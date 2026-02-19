@@ -31,8 +31,22 @@ pre[class*="language-"] {
   padding: 1rem;
   margin: 1rem 0;
   overflow: auto;
-  border-radius: 0.5rem;
-  border: 1px solid #30363d;
+  scrollbar-width: thin;
+  scrollbar-color: #6b7280 #1f2937; /* thumb color and track color */
+}
+
+/* For Webkit browsers */
+pre[class*="language-"]::-webkit-scrollbar {
+  height: 8px;
+}
+
+pre[class*="language-"]::-webkit-scrollbar-thumb {
+  background-color: #6b7280;
+  border-radius: 4px;
+}
+
+pre[class*="language-"]::-webkit-scrollbar-track {
+  background-color: #1f2937;
 }
 
 .token.comment,

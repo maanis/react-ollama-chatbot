@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { sendMessageToOllama } from "./utils/ollama";
 import Prism from 'prismjs';
 import './styles/prism-theme.css';
+import 'prismjs/components/prism-python';
 
 
 // ─────────────────────────────────────────────────────────────
@@ -29,8 +30,12 @@ const CodeBlock = ({ code, lang }) => {
 
   return (
     <div className="relative bg-[#1a1b1e] rounded-lg p-4 my-4 border border-zinc-700">
-      <pre className="overflow-x-auto">
-        <code ref={codeRef} className={`language-${lang || 'text'} p-4 rounded-md bg-[#0d1117] text-[#c9d1d9]`}> {/* Applying GitHub dark theme styles */}
+      <pre className="overflow-x-auto scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-800">
+        <code
+          ref={codeRef}
+          className={`language-${lang || 'text'} p-0 rounded-md bg-[#0d1117]`}
+          style={{ color: 'inherit' }}
+        >
           {code}
         </code>
       </pre>
@@ -49,7 +54,7 @@ const CodeBlock = ({ code, lang }) => {
 // ─────────────────────────────────────────────────────────────
 const parseContent = (content) => {
   if (!content) return null;
-  const parts = content.split(/(```[\s\S]*?```)/g);
+  const parts = content.split(/(```[\s\S]*?```|\*\*.*?\*\*|\*.*?\*|###.*|##.*|#.*)/g);
   return parts.map((part, index) => {
     if (part.startsWith('```')) {
       const match = part.match(/```(\w+)?\n([\s\S]*?)```/);
@@ -58,6 +63,16 @@ const parseContent = (content) => {
         const code = match[2];
         return <CodeBlock key={index} code={code} lang={lang} />;
       }
+    } else if (part.startsWith('###')) {
+      return <h3 key={index} className="text-xl font-semibold text-zinc-300 my-2">{part.replace(/^###\s*/, '')}</h3>;
+    } else if (part.startsWith('##')) {
+      return <h2 key={index} className="text-2xl font-bold text-zinc-200 my-2">{part.replace(/^##\s*/, '')}</h2>;
+    } else if (part.startsWith('#')) {
+      return <h1 key={index} className="text-3xl font-extrabold text-zinc-100 my-3">{part.replace(/^#\s*/, '')}</h1>;
+    } else if (part.startsWith('**') && part.endsWith('**')) {
+      return <strong key={index} className="font-bold text-zinc-200">{part.replace(/\*\*/g, '')}</strong>;
+    } else if (part.startsWith('*') && part.endsWith('*')) {
+      return <em key={index} className="italic text-zinc-300">{part.replace(/\*/g, '')}</em>;
     }
     return (
       <span key={index} style={{ whiteSpace: 'pre-wrap' }}>
@@ -149,9 +164,35 @@ export default function ChatInterface() {
   const [inputText, setInputText] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef(null);
+  const [isUserScrolling, setIsUserScrolling] = useState(false);
+
+  const handleScroll = () => {
+    const element = messagesEndRef.current?.parentElement;
+    if (element) {
+      const isAtBottom = element.scrollHeight - element.scrollTop === element.clientHeight;
+      setIsUserScrolling(!isAtBottom);
+    }
+  };
+
+  useEffect(() => {
+    const element = messagesEndRef.current?.parentElement;
+    if (element) {
+      element.addEventListener('scroll', handleScroll);
+      return () => element.removeEventListener('scroll', handleScroll);
+    }
+  }, []);
+
+  useEffect(() => {
+    const element = messagesEndRef.current?.parentElement;
+    if (element) {
+      element.scrollTop = element.scrollHeight;
+    }
+  }, []);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!isUserScrolling) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   useEffect(() => {
@@ -224,7 +265,7 @@ export default function ChatInterface() {
     <div className="min-h-screen bg-[#0b0c10] font-sans flex flex-col items-center">
 
       {/* ── Header / Logo ── */}
-      <header className="w-full py-8 flex justify-center">
+      <header className="w-full py-8 flex justify-center bg-[#0b0c10]">
         {/* Double Diamond Logo recreating the image */}
         <div className="relative w-8 h-8">
           <div className="absolute top-0 left-0 w-6 h-6 bg-zinc-300 rounded-sm rotate-45 transform origin-center"></div>
@@ -233,7 +274,7 @@ export default function ChatInterface() {
       </header>
 
       {/* ── Chat Canvas ── */}
-      <main className="flex-1 w-full max-w-3xl px-4 overflow-y-auto pb-40">
+      <main className="flex-1 w-full max-w-3xl px-4 overflow-y-auto pb-40 bg-[#0b0c10]">
         {conversation.map((msg, index) => (
           msg.role === 'user' ? (
             <UserMessage key={index} text={msg.content} />
@@ -252,24 +293,21 @@ export default function ChatInterface() {
           <div className="absolute right-0 top-1/2 -translate-y-1/2 w-32 h-32 bg-blue-500/15 blur-[60px] pointer-events-none rounded-full"></div>
 
           {/* Input Box */}
-          <div className="relative flex items-center gap-3 bg-[#13151a] border border-zinc-800/80 rounded-[1.25rem] px-4 py-3 shadow-2xl">
-            <button className="text-zinc-400 hover:text-zinc-200 transition-colors">
-              <Icons.Sparkles />
-            </button>
+          <div className="relative flex items-end gap-3 bg-[#13151a] border border-zinc-800/80 rounded-[1.25rem] px-4 py-3 shadow-2xl">
+
 
             <textarea
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Message Voxly AI..."
-              className="flex-1 bg-transparent text-zinc-100 placeholder-zinc-500 outline-none text-[15px] resize-none min-h-[20px] max-h-32 overflow-y-auto"
+              placeholder="Message Voxa AI..."
+              className="flex-1 h-646 bg-transparent text-zinc-100 placeholder-zinc-500 outline-none text-[15p1x] resize-none  overflow-y-auto leading-relaxed py-[10px]"
               disabled={isLoading}
               rows={1}
+              style={{ minHeight: '44px', maxHeight: '120px' }}
             />
 
-            <button className="text-zinc-400 hover:text-zinc-200 transition-colors mr-1">
-              <Icons.Mic />
-            </button>
+
 
             {/* Blue Send Button */}
             <button
@@ -286,12 +324,7 @@ export default function ChatInterface() {
           </div>
 
           {/* Action Chips */}
-          <div className="flex flex-wrap items-center justify-center gap-3 mt-4">
-            <ActionChip icon={<Icons.Image />} label="Create Image" colorClass="text-blue-400" />
-            <ActionChip icon={<Icons.Text />} label="Summarize Text" colorClass="text-red-400" />
-            <ActionChip icon={<Icons.Calendar />} label="Make a Plan" colorClass="text-yellow-400" />
-            <ActionChip icon={<Icons.Chart />} label="Analyze Data" colorClass="text-emerald-400" />
-          </div>
+
         </div>
 
       </div>
