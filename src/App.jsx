@@ -300,7 +300,7 @@ export default function ChatInterface() {
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Message Voxa AI..."
+              placeholder="Message AI..."
               className="flex-1 h-646 bg-transparent text-zinc-100 placeholder-zinc-500 outline-none text-[15p1x] resize-none  overflow-y-auto leading-relaxed py-[10px]"
               disabled={isLoading}
               rows={1}
